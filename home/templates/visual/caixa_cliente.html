@@ -1,0 +1,227 @@
+{% extends 'visual/base.html' %}
+{% block conteudo %}
+
+
+
+
+{% if messages %}
+<div class="container mt-2">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="container-lg">
+    <h2 class="mb-4" id="titulo">Produtos consumidos - {{ cliente.nome_cliente }}</h2>
+    <div class="row">
+        <!-- coluna 1 -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h4 class="card-title">Produtos em estoque</h4>
+                    <div class="mb-2">
+                        <input type="text" id="filtro-produtos" class="form-control form-control-sm"
+                            placeholder="Pesquisar produto por nome...">
+                    </div>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Nome</th>
+                                <th>Preço</th>
+                                <th>Medida</th>
+                                <th>Qtd</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for produtos in estoque %}
+                            <tr>
+                                <td>{{ produtos.tipo }}</td>
+                                <td>{{ produtos.nome }}</td>
+                                <td>{{ produtos.preco }}</td>
+                                <td>{{ produtos.medida }}</td>
+                                <td>
+                                    {% if produtos.quantidade > 0 %}
+                                    {{ produtos.quantidade }}
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <form method="POST" action="{% url 'adicionar_item' cliente_id produtos.id %}"
+                                        class="d-flex align-items-center">
+                                        {% csrf_token %}
+                                        <input type="number" name="quantidade" value="1" min="1"
+                                            class="form-control form-control-sm me-2" style="width: 60px;" required>
+                                        <button type="submit" class="btn btn-success btn-sm">+</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <!-- coluna 2 -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h4 class="card-title">Conta do cliente</h4>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Qtd</th>
+                                <th>Preço</th>
+                                <th>Total</th>
+
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in cesta %}
+                            <tr>
+                                <td>{{ item.produto.nome }}</td>
+                                <td>{{ item.quantidade }}</td>
+                                <td>R$ {{ item.preco_unit }}</td>
+                                <td>R$ {{ item.subtotal }}</td>
+                                <td>
+                                    <form method="POST" action="{% url 'remover_item' item.id %}"
+                                        class="d-flex align-items-center">
+                                        {% csrf_token %}
+                                        <input type="number" name="quantidade" value="1" min="1"
+                                            class="form-control form-control-sm me-2" style="width: 60px;" required>
+                                        <button type="submit" class="btn btn-danger btn-sm">Remover</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5">Nenhum item na conta.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+
+                    <div class="d-flex justify-content-between mt-3">
+                        <h5>Total:</h5>
+                        <h5>R$ {{ total_cesta }}</h5>
+                    </div>
+
+                    <!-- Botão do Modal de fechamento de conta -->
+                    <button type="button" class="btn btn-success" data-bs-toggle="modal"
+                        data-bs-target="#staticBackdrop">
+                        Fechar Conta
+                    </button>
+
+                    <!-- Modal de Fechamento de Conta -->
+                    <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false"
+                        tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="staticBackdropLabel">Fechamento de Conta</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <form id="form-fechamento" method="POST" action="{% url 'fechar_conta' %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="cliente_id" value="{{ cliente_id }}">
+
+                                        <div class="mb-3">
+                                            <label for="desconto" class="form-label">Desconto (%)</label>
+                                            <input type="number" step="1" min="0" max="100" class="form-control"
+                                                id="desconto" name="desconto" value="0">
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="forma_pag" class="form-label">Forma de Pagamento</label>
+                                            <select class="form-select" id="forma_pag" name="forma_pag" required>
+                                                <option value="" disabled selected>Selecione</option>
+                                                <option value="1">Dinheiro</option>
+                                                <option value="2">Cartão</option>
+                                                <option value="3">Pix</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="valor_pag" class="form-label">Valor Pago</label>
+                                            <input type="number" step="0.01" min="0" class="form-control" id="valor_pag"
+                                                name="valor_pag" required
+                                                placeholder="valor esperado: R$ {{ total_cesta }}">
+                                        </div>
+
+                                    </form>
+                                </div>
+
+                                <div class="modal-footer">
+                                    <hr>
+                                    <div class="d-flex justify-content-between px-3">
+                                        <strong>Total com Desconto:</strong>
+                                        <span id="total-com-desconto">R$ {{ total_cesta }}</span>
+                                    </div>
+                                    <button type="button" class="btn btn-secondary"
+                                        data-bs-dismiss="modal">Cancelar</button>
+                                    <button type="submit" class="btn btn-success" form="form-fechamento">Fechar
+                                        Conta</button>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const input = document.getElementById('filtro-produtos');
+        const tabela = document.querySelector('table.table.table-striped tbody');
+
+        input.addEventListener('keyup', function () {
+            const filtro = input.value.toLowerCase();
+            const linhas = tabela.getElementsByTagName('tr');
+
+            Array.from(linhas).forEach((linha) => {
+                const nomeProduto = linha.cells[1]?.textContent.toLowerCase() || '';
+                if (nomeProduto.includes(filtro)) {
+                    linha.style.display = '';
+                } else {
+                    linha.style.display = 'none';
+                }
+            });
+        });
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const totalOriginal = parseFloat("{{ total_cesta|floatformat:'2' }}".replace(',', '.')) || 0;
+        const totalDescontoLabel = document.getElementById('total-com-desconto');
+        const descontoInput = document.getElementById('desconto');
+        const valorPagInput = document.getElementById('valor_pag');
+
+        function atualizarPlaceholder() {
+            let perc = parseFloat(descontoInput.value) || 0;
+            if (perc < 0) perc = 0;
+            if (perc > 100) perc = 100;
+
+            const descontoValor = (totalOriginal * perc) / 100;
+            const totalComDesconto = totalOriginal - descontoValor;
+
+            valorPagInput.placeholder = 'valor esperado: R$ ' + totalComDesconto.toFixed(2);
+            if (totalDescontoLabel) {
+                totalDescontoLabel.textContent = 'R$ ' + totalComDesconto.toFixed(2);
+            }
+        }
+
+
+        descontoInput.addEventListener('input', atualizarPlaceholder);
+        atualizarPlaceholder();
+    });
+</script>
+{% endblock %}
