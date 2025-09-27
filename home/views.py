@@ -87,7 +87,7 @@ def home(request):
     data_mais_vendidos = [int(item["total_vendido"]) for item in mais_vendidos]
 
     produtos_estoque_baixo = (
-        produtos.objects.filter(tipo=1)  # só mercadorias
+        produtos.objects.filter(usuario=request.user, tipo=1)  # só mercadorias
         .order_by('quantidade')[:8]      # 8 com menor estoque
         .values_list('nome', 'quantidade')
     )
