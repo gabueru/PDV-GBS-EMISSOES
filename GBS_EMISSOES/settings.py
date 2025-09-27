@@ -18,7 +18,7 @@ DATABASE_URL = os.getenv('DATABASE_URL')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ['gbsemissoespdv.com.br', 'www.gbsemissoespdv.com.br', '191.101.71.46']
 
 # LOGIN URL
 LOGIN_URL = 'login'
